@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from typing import Optional
 import mysql.connector  # Para conectarse a Aurora
 from mysql.connector import Error
-import os
 
 AURORA_DB_IP = "3.230.28.178"
 AURORA_DB_USER = "root"
@@ -17,10 +16,10 @@ app = FastAPI()
 class Rockie(BaseModel):
     id_estudiante: int
     nombre: str
-    sombrero: Optional[str] = None  # ID del accesorio como string
-    cara: Optional[str] = None  # ID del accesorio como string
-    cuerpo: Optional[str] = None  # ID del accesorio como string
-    mano: Optional[str] = None  # ID del accesorio como string
+    sombrero: Optional[int] = None  # ID del accesorio como int
+    cara: Optional[int] = None      # ID del accesorio como int
+    cuerpo: Optional[int] = None    # ID del accesorio como int
+    mano: Optional[int] = None      # ID del accesorio como int
 
 # Modelo de datos de accesorio
 class Accesorio(BaseModel):
@@ -55,6 +54,11 @@ def obtener_rockie(id_estudiante: int):
     rockie = cursor.fetchone()
 
     if rockie:
+        # Convertir a int los campos que deben ser enteros para evitar errores de tipo
+        rockie['sombrero'] = int(rockie['sombrero']) if rockie['sombrero'] is not None else None
+        rockie['cara'] = int(rockie['cara']) if rockie['cara'] is not None else None
+        rockie['cuerpo'] = int(rockie['cuerpo']) if rockie['cuerpo'] is not None else None
+        rockie['mano'] = int(rockie['mano']) if rockie['mano'] is not None else None
         return rockie
     else:
         raise HTTPException(status_code=404, detail="Rockie no encontrado")
@@ -105,11 +109,11 @@ def obtener_accesorios():
     return accesorios
 
 @app.get("/accesorio/{id_accesorio}")
-def obtener_accesorio(id_accesorio: str):
+def obtener_accesorio(id_accesorio: int):
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
-    query = "SELECT * FROM accesorios WHERE dynamo_id = %s"
+    query = "SELECT * FROM accesorios WHERE id_accesorio = %s"
     cursor.execute(query, (id_accesorio,))
     accesorio = cursor.fetchone()
 
@@ -133,16 +137,16 @@ def crear_accesorio(accesorio: Accesorio):
     except Error as e:
         raise HTTPException(status_code=400, detail=f"Error al crear el accesorio: {e}")
 
-# Endpoint PUT para actualizar un accesorio por ID (corregido)
+# Endpoint PUT para actualizar un accesorio por ID
 @app.put("/accesorio/{id_accesorio}", response_model=Accesorio)
-def actualizar_accesorio(id_accesorio: str, accesorio: Accesorio):
+def actualizar_accesorio(id_accesorio: int, accesorio: Accesorio):
     connection = get_db_connection()
     cursor = connection.cursor()
 
     query = """
     UPDATE accesorios 
     SET nombre = %s, tipo = %s, dynamo_id = %s
-    WHERE dynamo_id = %s
+    WHERE id_accesorio = %s
     """
     values = (accesorio.nombre, accesorio.tipo, accesorio.dynamo_id, id_accesorio)
 
