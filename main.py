@@ -133,3 +133,21 @@ def crear_accesorio(accesorio: Accesorio):
     except Error as e:
         raise HTTPException(status_code=400, detail=f"Error al crear el accesorio: {e}")
 
+# Endpoint PUT para actualizar un accesorio por ID (corregido)
+@app.put("/accesorio/{id_accesorio}", response_model=Accesorio)
+def actualizar_accesorio(id_accesorio: str, accesorio: Accesorio):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    query = """
+    UPDATE accesorios 
+    SET nombre = %s, tipo = %s, dynamo_id = %s
+    WHERE dynamo_id = %s
+    """
+    values = (accesorio.nombre, accesorio.tipo, accesorio.dynamo_id, id_accesorio)
+
+    cursor.execute(query, values)
+    connection.commit()
+
+    return accesorio
+
