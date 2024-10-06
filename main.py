@@ -13,14 +13,14 @@ AURORA_DB_PORT = 8002
 
 app = FastAPI()
 
-# Modelo de datos de rockie
+# Modelo de datos de Rockie
 class Rockie(BaseModel):
     id_estudiante: int
     nombre: str
-    sombrero: Optional[int] = None  # ID del accesorio
-    cara: Optional[int] = None  # ID del accesorio
-    cuerpo: Optional[int] = None  # ID del accesorio
-    mano: Optional[int] = None  # ID del accesorio
+    sombrero: Optional[str] = None  # ID del accesorio como string
+    cara: Optional[str] = None  # ID del accesorio como string
+    cuerpo: Optional[str] = None  # ID del accesorio como string
+    mano: Optional[str] = None  # ID del accesorio como string
 
 # Modelo de datos de accesorio
 class Accesorio(BaseModel):
@@ -36,7 +36,7 @@ def get_db_connection():
             user=AURORA_DB_USER,
             password=AURORA_DB_PASSWORD,
             database=AURORA_DB_NAME,
-	    port=AURORA_DB_PORT
+            port=AURORA_DB_PORT
         )
         return connection
     except Error as e:
@@ -45,7 +45,6 @@ def get_db_connection():
 
 # ------------------- Endpoints para los Rockies -------------------
 
-# Endpoint GET para obtener la información de un rockie por ID desde Aurora
 @app.get("/rockie/{id_estudiante}", response_model=Rockie)
 def obtener_rockie(id_estudiante: int):
     connection = get_db_connection()
@@ -54,13 +53,12 @@ def obtener_rockie(id_estudiante: int):
     query = "SELECT * FROM rockies WHERE id_estudiante = %s"
     cursor.execute(query, (id_estudiante,))
     rockie = cursor.fetchone()
-    
+
     if rockie:
         return rockie
     else:
         raise HTTPException(status_code=404, detail="Rockie no encontrado")
 
-# Endpoint POST para crear un nuevo rockie en Aurora
 @app.post("/rockie/", response_model=Rockie)
 def crear_rockie(rockie: Rockie):
     connection = get_db_connection()
@@ -68,7 +66,7 @@ def crear_rockie(rockie: Rockie):
 
     query = "INSERT INTO rockies (id_estudiante, nombre, sombrero, cara, cuerpo, mano) VALUES (%s, %s, %s, %s, %s, %s)"
     values = (rockie.id_estudiante, rockie.nombre, rockie.sombrero, rockie.cara, rockie.cuerpo, rockie.mano)
-    
+
     try:
         cursor.execute(query, values)
         connection.commit()
@@ -76,7 +74,6 @@ def crear_rockie(rockie: Rockie):
     except Error as e:
         raise HTTPException(status_code=400, detail=f"Error al crear el rockie: {e}")
 
-# Endpoint PUT para actualizar los datos de un rockie en Aurora
 @app.put("/rockie/{id_estudiante}", response_model=Rockie)
 def actualizar_rockie(id_estudiante: int, rockie: Rockie):
     connection = get_db_connection()
@@ -88,15 +85,14 @@ def actualizar_rockie(id_estudiante: int, rockie: Rockie):
     WHERE id_estudiante = %s
     """
     values = (rockie.nombre, rockie.sombrero, rockie.cara, rockie.cuerpo, rockie.mano, id_estudiante)
-    
+
     cursor.execute(query, values)
     connection.commit()
-    
+
     return rockie
 
 # ------------------- Endpoints para los Accesorios -------------------
 
-# Endpoint GET para obtener todos los accesorios
 @app.get("/accesorios/")
 def obtener_accesorios():
     connection = get_db_connection()
@@ -105,25 +101,23 @@ def obtener_accesorios():
     query = "SELECT * FROM accesorios"
     cursor.execute(query)
     accesorios = cursor.fetchall()
-    
+
     return accesorios
 
-# Endpoint GET para obtener un accesorio por ID
 @app.get("/accesorio/{id_accesorio}")
-def obtener_accesorio(id_accesorio: int):
+def obtener_accesorio(id_accesorio: str):
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
-    query = "SELECT * FROM accesorios WHERE id_accesorio = %s"
+    query = "SELECT * FROM accesorios WHERE dynamo_id = %s"
     cursor.execute(query, (id_accesorio,))
     accesorio = cursor.fetchone()
-    
+
     if accesorio:
         return accesorio
     else:
         raise HTTPException(status_code=404, detail="Accesorio no encontrado")
 
-# Endpoint POST para crear un nuevo accesorio
 @app.post("/accesorio/", response_model=Accesorio)
 def crear_accesorio(accesorio: Accesorio):
     connection = get_db_connection()
@@ -131,29 +125,11 @@ def crear_accesorio(accesorio: Accesorio):
 
     query = "INSERT INTO accesorios (nombre, tipo, dynamo_id) VALUES (%s, %s, %s)"
     values = (accesorio.nombre, accesorio.tipo, accesorio.dynamo_id)
-    
+
     try:
         cursor.execute(query, values)
         connection.commit()
         return accesorio
     except Error as e:
         raise HTTPException(status_code=400, detail=f"Error al crear el accesorio: {e}")
-
-# Endpoint PUT para actualizar un accesorio por ID
-@app.put("/accesorio/{id_accesorio}", response_model=Accesorio)
-def actualizar_accesorio(id_accesorio: int, accesorio: Accesorio):
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    query = """
-    UPDATE accesorios 
-    SET nombre = %s, tipo = %s, dynamo_id = %s
-    WHERE id_accesorio = %s
-    """
-    values = (accesorio.nombre, accesorio.tipo, accesorio.dynamo_id, id_accesorio)
-    
-    cursor.execute(query, values)
-    connection.commit()
-    
-    return accesorio
 
