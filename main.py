@@ -5,10 +5,11 @@ import mysql.connector  # Para conectarse a Aurora
 from mysql.connector import Error
 import os
 
-AURORA_DB_IP = os.environ.get("AURORA_DB_IP")
-AURORA_DB_USER = os.environ.get("AURORA_DB_USER")
-AURORA_DB_PASSWORD = os.environ.get("AURORA_DB_PASSWORD")
-AURORA_DB_NAME = os.environ.get("AURORA_DB_NAME")
+AURORA_DB_IP = "3.230.28.178"
+AURORA_DB_USER = "root"
+AURORA_DB_PASSWORD = "utec"
+AURORA_DB_NAME = "mysql"
+AURORA_DB_PORT = 8002
 
 app = FastAPI()
 
@@ -34,7 +35,8 @@ def get_db_connection():
             host=AURORA_DB_IP,
             user=AURORA_DB_USER,
             password=AURORA_DB_PASSWORD,
-            database=AURORA_DB_NAME
+            database=AURORA_DB_NAME,
+	    port=AURORA_DB_PORT
         )
         return connection
     except Error as e:
