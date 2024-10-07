@@ -65,6 +65,7 @@ def obtener_rockie(id_estudiante: int):
 
 @app.post("/rockie/", response_model=Rockie)
 def crear_rockie(rockie: Rockie):
+    print(f"Intentando crear un rockie con los datos: {rockie}")
     connection = get_db_connection()
     cursor = connection.cursor()
 
@@ -74,9 +75,15 @@ def crear_rockie(rockie: Rockie):
     try:
         cursor.execute(query, values)
         connection.commit()
+        print("Rockie creado exitosamente en la base de datos.")
         return rockie
     except Error as e:
+        print(f"Error al crear el rockie: {e}")
         raise HTTPException(status_code=400, detail=f"Error al crear el rockie: {e}")
+    finally:
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
 
 @app.put("/rockie/{id_estudiante}", response_model=Rockie)
 def actualizar_rockie(id_estudiante: int, rockie: Rockie):
